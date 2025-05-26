@@ -1,18 +1,67 @@
 package main
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os/exec"
 	"strings"
+	"text/template"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+	"github.com/tmc/langchaingo/llms"
+	"github.com/tmc/langchaingo/llms/ollama"
 )
 
-// Configuration
+// ModelInfo represents information about an Ollama model
+type ModelInfo struct {
+	Name    string `json:"name"`
+	Size    string `json:"size,omitempty"`
+	ModTime string `json:"modified,omitempty"`
+}
+
+// Available models
+var models = []string{
+	"gemma3", "qwen3", "devstral", "deepseek-r1", "deepseek-coder-v2", "llama4", "qwen2.5vl", "llama3.3", "phi4", "mistral",
+}
+
+const SystemTemplate = `You are a helpful coding assistant. When providing code examples:
+1. Always use proper markdown formatting with language-specific syntax highlighting
+2. Use triple backticks with the language name for code blocks (e.g. "` + "```" + `python")
+3. Format code in a clean, readable way with proper indentation
+4. Use VSCode-style syntax highlighting conventions
+
+User Query: {{.Query}}
+`
+
+// PromptData holds the data to be inserted into the template
+type PromptData struct {
+	Query string
+}
+
+// FormatPrompt formats the system prompt with the user query
+func FormatPrompt(query string) string {
+	tmpl, err := template.New("prompt").Parse(SystemTemplate)
+	if err != nil {
+		log.Printf("Error parsing template: %v", err)
+		return ""
+	}
+
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, PromptData{Query: query})
+	if err != nil {
+		log.Printf("Error executing template: %v", err)
+		return ""
+	}
+
+	return buf.String()
+}
+
+// PORT Configuration
 const (
 	PORT = "8080"
 )
@@ -60,7 +109,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	defer func(conn *websocket.Conn) {
 		err := conn.Close()
 		if err != nil {
-
+			log.Printf("Error closing WebSocket: %v", err)
 		}
 	}(conn)
 
@@ -78,8 +127,8 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		// Process the message with Ollama
-		response := processOllamaQuery(msg.Message, msg.Model)
+		// Process the message with Ollama using langchaingo
+		response := processOllamaQueryWithLangChain(msg.Message, msg.Model)
 
 		// Send response back
 		if err := conn.WriteMessage(websocket.TextMessage, []byte(response)); err != nil {
@@ -89,7 +138,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Get available models from Ollama
+// Get available models from Ollama and return as JSON
 func getModels(w http.ResponseWriter, r *http.Request) {
 	cmd := exec.Command("ollama", "list")
 	output, err := cmd.CombinedOutput()
@@ -99,24 +148,76 @@ func getModels(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Parse the output to extract model names
+	lines := strings.Split(string(output), "\n")
+	var modelList []ModelInfo
+	
+	// Skip header line and process each model line
+	for i, line := range lines {
+		if i == 0 || len(line) == 0 {
+			continue // Skip header or empty lines
+		}
+		
+		fields := strings.Fields(line)
+		if len(fields) >= 3 {
+			modelList = append(modelList, ModelInfo{
+				Name:    fields[0],
+				Size:    fields[1],
+				ModTime: strings.Join(fields[2:], " "),
+			})
+		}
+	}
+	
+	// Convert to JSON and send response
+	jsonResponse, err := json.Marshal(modelList)
+	if err != nil {
+		http.Error(w, "Failed to marshal model list", http.StatusInternalServerError)
+		return
+	}
+	
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(output)
+	w.Write(jsonResponse)
 }
 
-// Process query with Ollama CLI
-func processOllamaQuery(query string, model string) string {
-	if model == "" {
-		model = "llama3.1" // Default model
+// Initialize an Ollama model client
+func initializeOllamaModel(modelName string) (*ollama.LLM, error) {
+	if modelName == "" {
+		modelName = "llama3" // Default model
 	}
-
-	cmd := exec.Command("ollama", "run", model, query)
-	output, err := cmd.CombinedOutput()
+	
+	// Create a new Ollama LLM client
+	ollamaLLM, err := ollama.New(
+		ollama.WithModel(modelName),
+		ollama.WithServerURL("http://localhost:11434"),
+	)
+	
 	if err != nil {
-		log.Printf("Error running Ollama: %v", err)
+		log.Printf("Error initializing Ollama model %s: %v", modelName, err)
+		return nil, err
+	}
+	
+	return ollamaLLM, nil
+}
+
+// Process query with Ollama using langchaingo
+func processOllamaQueryWithLangChain(query string, modelName string) string {
+	// Initialize the model
+	model, err := initializeOllamaModel(modelName)
+	if err != nil {
+		return fmt.Sprintf("Error initializing model: %v", err)
+	}
+	
+	// Create a formatted prompt
+	prompt := FormatPrompt(query)
+	
+	// Call the model
+	ctx := context.Background()
+	response, err := model.Call(ctx, prompt, llms.WithTemperature(0.7))
+	
+	if err != nil {
+		log.Printf("Error calling Ollama model: %v", err)
 		return fmt.Sprintf("Error: %v", err)
 	}
-
-	// Clean up the output
-	response := strings.TrimSpace(string(output))
+	
 	return response
 }

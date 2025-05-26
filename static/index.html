@@ -3,52 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ollama Chat</title>
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+    <title>Ollama Coding Assistant</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Add Marked.js for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Add Highlight.js for syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/vs2015.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/bash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/sql.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/css.min.js"></script>
+    <style>
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Position chat container at the bottom */
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+.chat-container {
+  margin-top: auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+    </style>
 </head>
 <body>
-<div class="app-container">
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <h1>Ollama Chat</h1>
+    <header class="app-header">
+        <div class="logo">
+            <img src="../resources/images/ollama.png" alt="Ollama Logo" height="30">
         </div>
-        <div class="model-selector">
-            <label for="model-select">Model:</label>
-            <select id="model-select">
-                <option value="llama3.1">Llama 3.1</option>
-                <option value="deepseek-coder-v2">Deepseek Coder v2</option>
-                <option value="gemma3">Gemma 3</option>
-                <option value="mistral">Mistral</option>
-                <option value="phi4">Phi 4</option>
-                <option value="llama4">Llama 4</option>
-                <option value="qwen3">Qwen 3</option>
-            </select>
-        </div>
-        <div class="conversation-list">
-            <button id="new-chat">+ New Chat</button>
-            <div class="conversations">
-                <!-- Conversations will be listed here -->
-            </div>
-        </div>
-    </div>
+        <h1 style="margin-left: 100px;">Ollama Coding Assistant</h1>
+    </header>
     <div class="chat-container">
         <div class="chat-messages" id="chat-messages">
-            <!-- Messages will appear here -->
-            <div class="welcome-message">
-                <h2>Welcome to Ollama Chat</h2>
-                <p>Start a conversation with your selected AI model.</p>
+            <div class="message-row bot">
+                <div class="message bot">
+                    <div class="message-container">
+                        <div class="bot-avatar">AI</div>
+                        <div class="message-content markdown-body">Hello! How can I help you today?</div>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="chat-input-container">
-            <textarea id="chat-input" placeholder="Type your message here..."></textarea>
-            <button id="send-button">Send</button>
+            <div class="chat-input">
+                <div class="markdown-toolbar">
+                    <button class="toolbar-button" data-format="bold" title="Bold">B</button>
+                    <button class="toolbar-button" data-format="italic" title="Italic">I</button>
+                    <button class="toolbar-button" data-format="code" title="Code">`</button>
+                    <button class="toolbar-button" data-format="codeblock" title="Code Block">```</button>
+                </div>
+                <label for="user-input" class="sr-only">Message input</label>
+                <textarea id="user-input" placeholder="Type your message here..." rows="1" aria-label="Type your message here"></textarea>
+                <button id="send-button">Send</button>
+            </div>
         </div>
     </div>
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.0.2/marked.min.js"></script>
-<script src="js/app.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
