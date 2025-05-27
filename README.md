@@ -5,7 +5,11 @@
 
 ### Powered by [Ollama](https://ollama.com/)
 
-<img width="452" alt="Screenshot 2025-01-13 at 5 18 23 PM" src="https://github.com/user-attachments/assets/9509b333-d71f-4e77-b222-c7b3297f5b55" />
+
+<p align="center">
+  <img src="resources/images/Ollama.com-logo.png" alt="Ollama.com-logo" width="45%">
+  <img src="resources/images/Ollama-API-Go-Menu-Display-Scaled.png" alt="Ollama-API-Go-Menu-Display" width="45%">
+</p>
 
 A sleek, modern chat interface for interacting with a variety of Ollama's large language models covering a wide variety of use cases.
 
