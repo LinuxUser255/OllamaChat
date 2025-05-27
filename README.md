@@ -173,7 +173,7 @@ Ollama supports importing GGUF models in the Modelfile:
    ```
 
 
-# Flow Chart Diagram of Ollama AI Assistant Application
+### Flow Chart Diagram of Ollama AI Assistant Application
 
 
 <p align="center">
