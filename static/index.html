@@ -36,22 +36,83 @@ body {
   min-height: 100vh;
   margin: 0;
   padding: 0;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.logo {
+  flex-shrink: 0;
+}
+
+.app-header h1 {
+  margin: 0;
+  text-align: center;
+  flex-grow: 1;
+}
+
+.model-selector {
+  flex-shrink: 0;
+  width: 200px;
 }
 
 .chat-container {
   margin-top: auto;
   width: 100%;
+  max-width: 1200px; /* Limit maximum width */
+  margin-left: auto;
+  margin-right: auto;
   display: flex;
   flex-direction: column;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+.chat-messages {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.chat-input-container {
+  width: 100%;
+  max-width: 100%;
+  padding: 10px 0;
+}
+
+.chat-input {
+  display: flex;
+  position: relative;
+  width: 100%;
+}
+
+.chat-input textarea {
+  flex-grow: 1;
+  resize: none;
+  padding-right: 70px; /* Make room for the send button */
+}
+
+#send-button {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  height: 100%;
 }
     </style>
 </head>
 <body>
     <header class="app-header">
         <div class="logo">
-            <img src="../resources/images/ollama.png" alt="Ollama Logo" height="30">
+            <img src="images/ollama.png" alt="Ollama Logo" height="30">
         </div>
-        <h1 style="margin-left: 100px;">Ollama Assistant</h1>
+        <h1>Ollama Assistant</h1>
         <div class="model-selector">
             <label for="model-select">Select Model:</label>
             <select id="model-select" class="model-dropdown">

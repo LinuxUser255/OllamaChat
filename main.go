@@ -40,6 +40,7 @@ type ModelInfoResponse struct {
 // ChatResponse represents the response from the chat API
 type ChatResponse struct {
 	Response string `json:"response"`
+	Action   string
 }
 
 // Available models - matching the Python implementation
@@ -138,6 +139,9 @@ func main() {
 	// Models endpoint - similar to Python's get_models endpoint
 	r.HandleFunc("/api/models", getAvailableModels).Methods("GET")
 
+	// Retrieve actual installed models from ollama
+	r.HandleFunc("/api/models/installed-models", getModels).Methods("GET")
+
 	// Chat endpoint - similar to Python's chat endpoint
 	r.HandleFunc("/api/chat", handleChat).Methods("POST")
 
@@ -210,15 +214,45 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if !modelAvailable {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(ChatResponse{
-				Response: fmt.Sprintf("Model %s is not available", chatMsg.ModelName),
-			})
-			return
-		}
+			// Check if the model exists in Ollama's repository
+			cmd := exec.Command("ollama", "list")
+			output, err := cmd.CombinedOutput()
 
-		// Update the current model
-		currentModel = chatMsg.ModelName
+			// If we can run the command, check if the model is installed
+			modelInstalled := false
+			if err == nil {
+				lines := strings.Split(string(output), "\n")
+				for i, line := range lines {
+					if i == 0 || len(line) == 0 {
+						continue // Skip header or empty lines
+					}
+
+					fields := strings.Fields(line)
+					if len(fields) >= 1 && fields[0] == chatMsg.ModelName {
+						modelInstalled = true
+						break
+					}
+				}
+			}
+
+			if modelInstalled {
+				// Model is installed but not in our list, add it
+				AVAILABLE_MODELS = append(AVAILABLE_MODELS, chatMsg.ModelName)
+				currentModel = chatMsg.ModelName
+			} else {
+				// Model is not installed, suggest pulling it, then offer to pull it
+				w.WriteHeader(http.StatusNotFound)
+				json.NewEncoder(w).Encode(ChatResponse{
+					Response: fmt.Sprintf("Model %s is not available. Would you like to pull it from Ollama's repository?", chatMsg.ModelName),
+					// Suggest action to pull the model from the shell script in the static folder: resources/run_ollama.sh
+					Action: fmt.Sprintf("Run `./resources/run_ollama.sh %s`", chatMsg.ModelName),
+				})
+				return
+			}
+		} else {
+			// Update the current model
+			currentModel = chatMsg.ModelName
+		}
 	}
 
 	// Process the message with Ollama
@@ -287,16 +321,45 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			}
 
 			if !modelAvailable {
-				errorMsg := fmt.Sprintf("Model %s is not available", chatMsg.ModelName)
-				if err := conn.WriteMessage(websocket.TextMessage, []byte(errorMsg)); err != nil {
-					log.Println("WebSocket write error:", err)
-					return
-				}
-				continue
-			}
+				// Check if the model exists in Ollama's repository
+				cmd := exec.Command("ollama", "list")
+				output, err := cmd.CombinedOutput()
 
-			// Update the current model
-			currentModel = chatMsg.ModelName
+				// If we can run the command, check if the model is installed
+				modelInstalled := false
+				if err == nil {
+					lines := strings.Split(string(output), "\n")
+					for i, line := range lines {
+						if i == 0 || len(line) == 0 {
+							continue // Skip header or empty lines
+						}
+
+						fields := strings.Fields(line)
+						if len(fields) >= 1 && fields[0] == chatMsg.ModelName {
+							modelInstalled = true
+							break
+						}
+					}
+				}
+
+				if modelInstalled {
+					// Model is installed but not in our list, add it
+					AVAILABLE_MODELS = append(AVAILABLE_MODELS, chatMsg.ModelName)
+					currentModel = chatMsg.ModelName
+				} else {
+					// Model is not installed, suggest pulling it
+					errorMsg := fmt.Sprintf("Model %s is not available. Would you like to pull it from Ollama's repository? Use the command: 'ollama pull %s'",
+						chatMsg.ModelName, chatMsg.ModelName)
+					if err := conn.WriteMessage(websocket.TextMessage, []byte(errorMsg)); err != nil {
+						log.Println("WebSocket write error:", err)
+						return
+					}
+					continue
+				}
+			} else {
+				// Update the current model
+				currentModel = chatMsg.ModelName
+			}
 		}
 
 		log.Printf("Processing query with model: %s", currentModel)
