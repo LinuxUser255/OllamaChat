@@ -1,19 +1,7 @@
 #!/usr/bin/env bash
 
-# Model urls
-# a https://ollama.com/library/gemma3
-# b https://ollama.com/library/qwen3
-# c https://ollama.com/library/devstral
-# d https://ollama.com/library/deepseek-r1
-# e https://ollama.com/library/deepseek-coder-v2
-# f https://ollama.com/library/llama4
-# g https://ollama.com/library/qwen2.5vl
-# h https://ollama.com/library/llama3.3
-# i https://ollama.com/library/codellama
-# j https://ollama.com/library/starcoder2
-# k https://ollama.com/library/codegemma
-# l https://ollama.com/library/phi4
-# m https://ollama.com/library/mistral
+# Models found here:
+# https://ollama.com/library/search
 
 echo ''
 echo 'Select an Ollama Model to run.'
@@ -43,19 +31,21 @@ check_pull_and_run() {
 # Function to handle model selection
 handle_model() {
     case $1 in
-        A) check_pull_and_run gemma3 ;;
-        B) check_pull_and_run qwen3 ;;
-        C) check_pull_and_run devstral ;;
-        D) check_pull_and_run deepseek-r1 ;;
-        E) check_pull_and_run deepseek-coder-v2 ;;
-        F) check_pull_and_run llama4 ;;
-        G) check_pull_and_run qwen2.5vl ;;
+        A) check_pull_and_run gemma3:latest ;;
+        B) check_pull_and_run qwen3:8b ;;
+        C) check_pull_and_run devstral:24b ;;
+        D) check_pull_and_run deepseek-r1:latest ;;
+        E) check_pull_and_run deepseek-coder-v2:latest ;;
+        F) check_pull_and_run llama4:latest ;;
+        G) check_pull_and_run qwen2.5vl:latest ;;
         H) check_pull_and_run llama3.3 ;;
-        I) check_pull_and_run codellama ;;
+        I) check_pull_and_run codellama:latest ;;
         J) check_pull_and_run starcoder2 ;;
-        K) check_pull_and_run codegemma ;;
+        K) check_pull_and_run codegemma:2b ;;
         L) check_pull_and_run phi4 ;;
         M) check_pull_and_run mistral ;;
+        N) check_pull_and_run qwen2.5-coder:latest;;
+        O) check_pull_and_run deepseek-v3:latest;;
         *) echo "Invalid selection" ;;
     esac
 }
@@ -74,11 +64,13 @@ echo "J: starcoder2"
 echo "K: codegemma"
 echo "L: phi4"
 echo "M: mistral"
+echo "N: qwen2.5-coder"
+echo "O: deepseek-v3"
 echo ''
 
 # Prompt user for selection
 #read -p "Enter your choice (A-M): " choice
-read -p "Enter your choice (A/B/C/D/E/F/G/H/I/J/K/L/M): " choice
+read -p "Enter your choice (A/B/C/D/E/F/G/H/I/J/K/L/M/N/O): " choice
 
 # Convert to uppercase
 choice=$(echo $choice | tr '[:lower:]' '[:upper:]')

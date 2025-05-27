@@ -43,7 +43,7 @@ type ChatResponse struct {
 	Action   string
 }
 
-// Available models - matching the Python implementation
+// Available models
 var AVAILABLE_MODELS = []string{
 	"gemma3",
 	"qwen3",
@@ -63,7 +63,7 @@ var AVAILABLE_MODELS = []string{
 // Default model
 const DEFAULT_MODEL = "ollama3:8b"
 
-// Current model - global variable like in Python
+// Current model
 var currentModel = DEFAULT_MODEL
 
 const SystemTemplate = `You are a helpful coding assistant. When providing code examples:
@@ -122,13 +122,12 @@ func main() {
 	// Make sure to run "go get github.com/gorilla/mux" first if not installed
 	r := mux.NewRouter()
 
-	// API Routes GET requests to /home and endpoints /api/models, /api/chat
 	// Get request to the homepage
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "./static/index.html")
 	})
 
-	// Root endpoint - similar to Python's root endpoint
+	// Root endpoint
 	r.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(map[string]string{
@@ -138,13 +137,13 @@ func main() {
 		}
 	}).Methods("GET")
 
-	// Models endpoint - similar to Python's get_models endpoint
+	// Models endpoint
 	r.HandleFunc("/api/models", getAvailableModels).Methods("GET")
 
 	// Retrieve actual installed models from ollama
 	r.HandleFunc("/api/models/installed-models", getModels).Methods("GET")
 
-	// Chat endpoint - similar to Python's chat endpoint
+	// Chat endpoint
 	r.HandleFunc("/api/chat", handleChat).Methods("POST")
 
 	// WebSocket endpoint for real-time chat
@@ -168,10 +167,13 @@ func main() {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]string{
+		err := json.NewEncoder(w).Encode(map[string]string{
 			"status":  "ok",
 			"message": "Server is running and Ollama is available",
 		})
+		if err != nil {
+			return
+		}
 	}).Methods("GET")
 
 	// Add model pull endpoint
@@ -186,7 +188,7 @@ func main() {
 	log.Fatal(http.ListenAndServe(":"+PORT, r))
 }
 
-// Get available models endpoint - similar to Python's get_models function
+// Get available models endpoint
 func getAvailableModels(w http.ResponseWriter, r *http.Request) {
 	response := ModelInfoResponse{
 		AvailableModels: AVAILABLE_MODELS,
@@ -200,17 +202,19 @@ func getAvailableModels(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Handle chat endpoint - similar to Python's chat function
-// Handle chat endpoint - similar to Python's chat function
+// Handle chat endpoint
 func handleChat(w http.ResponseWriter, r *http.Request) {
 	var chatMsg ChatMessage
 
 	// Decode the request body
 	if err := json.NewDecoder(r.Body).Decode(&chatMsg); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(ChatResponse{
+		err := json.NewEncoder(w).Encode(ChatResponse{
 			Response: fmt.Sprintf("Error parsing request: %v", err),
 		})
+		if err != nil {
+			return
+		}
 		return
 	}
 
@@ -254,10 +258,13 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 			} else {
 				// Model is not installed, suggest pulling it, then offer to pull it
 				w.WriteHeader(http.StatusNotFound)
-				json.NewEncoder(w).Encode(ChatResponse{
+				err := json.NewEncoder(w).Encode(ChatResponse{
 					Response: fmt.Sprintf("Model %s is not available. Would you like to pull it from Ollama's repository?", chatMsg.ModelName),
 					Action:   fmt.Sprintf("pull:%s", chatMsg.ModelName),
 				})
+				if err != nil {
+					return
+				}
 				return
 			}
 		} else {
@@ -271,9 +278,12 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 
 	// Send response
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(ChatResponse{
+	err := json.NewEncoder(w).Encode(ChatResponse{
 		Response: response,
 	})
+	if err != nil {
+		return
+	}
 }
 
 // WebSocket handler for real-time chat
@@ -475,10 +485,13 @@ func handleModelPull(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&pullRequest); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{
+		err := json.NewEncoder(w).Encode(map[string]string{
 			"status":  "error",
 			"message": "Invalid request format",
 		})
+		if err != nil {
+			return
+		}
 		return
 	}
 
@@ -486,20 +499,26 @@ func handleModelPull(w http.ResponseWriter, r *http.Request) {
 	output, err := pullOllamaModel(pullRequest.ModelName)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{
+		err := json.NewEncoder(w).Encode(map[string]string{
 			"status":  "error",
 			"message": err.Error(),
 		})
+		if err != nil {
+			return
+		}
 		return
 	}
 
 	// Return success response
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	err = json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":  "success",
 		"message": fmt.Sprintf("Successfully pulled model %s", pullRequest.ModelName),
 		"details": output,
 	})
+	if err != nil {
+		return
+	}
 }
 
 // processOllamaQueryWithLangChain processes a query using the Ollama LLM through langchaingo
