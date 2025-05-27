@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ollama Coding Assistant</title>
+    <title>Ollama Assistant</title>
     <link rel="stylesheet" href="styles.css">
     <!-- Add Marked.js for Markdown parsing -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -51,7 +51,25 @@ body {
         <div class="logo">
             <img src="../resources/images/ollama.png" alt="Ollama Logo" height="30">
         </div>
-        <h1 style="margin-left: 100px;">Ollama Coding Assistant</h1>
+        <h1 style="margin-left: 100px;">Ollama Assistant</h1>
+        <div class="model-selector">
+            <label for="model-select">Select Model:</label>
+            <select id="model-select" class="model-dropdown">
+                <option value="gemma3">gemma3</option>
+                <option value="qwen3">qwen3</option>
+                <option value="devstral">devstral</option>
+                <option value="deepseek-r1">deepseek-r1</option>
+                <option value="deepseek-coder-v2">deepseek-coder-v2</option>
+                <option value="llama4">llama4</option>
+                <option value="qwen2.5vl">qwen2.5vl</option>
+                <option value="llama3.3">llama3.3</option>
+                <option value="codellama">codellama</option>
+                <option value="starcoder2">starcoder2</option>
+                <option value="codegemma">codegemma</option>
+                <option value="phi4">phi4</option>
+                <option value="mistral">mistral</option>
+            </select>
+        </div>
     </header>
     <div class="chat-container">
         <div class="chat-messages" id="chat-messages">
@@ -79,5 +97,17 @@ body {
         </div>
     </div>
     <script src="script.js"></script>
+    <script>
+        // Add event listener for model selection
+        document.getElementById('model-select').addEventListener('change', function() {
+            const selectedModel = this.value;
+            console.log('Model changed to:', selectedModel);
+            // You can store the selected model in a variable to use when sending messages
+            window.currentModel = selectedModel;
+        });
+
+        // Initialize the current model
+        window.currentModel = document.getElementById('model-select').value;
+    </script>
 </body>
 </html>
