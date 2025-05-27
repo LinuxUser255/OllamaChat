@@ -173,9 +173,15 @@ Ollama supports importing GGUF models in the Modelfile:
    ```
 
 
-# Flow Chart Diagram for Ollama AI Assistant Application
+# Flow Chart Diagram of Ollama AI Assistant Application
 
-Here's a flow chart diagram that illustrates how the Ollama AI Assistant application works:
+
+<p align="center">
+  <img src="./static/images/OllamaAPI-FlowChart.png" alt="Ollama.com-logo" width="45%">
+</p>
+
+
+
 
 ```mermaid
 flowchart TD
