@@ -2,6 +2,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const chatMessages = document.getElementById('chat-messages');
     const userInput = document.getElementById('user-input');
     const sendButton = document.getElementById('send-button');
+    // Add this at the end of your DOMContentLoaded event handler
+    setupModelInstallButtons();
 
     // Backend API URL - make sure this matches your backend server
     const API_URL = 'http://127.0.0.1:8000/api/chat';
@@ -187,6 +189,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({ message: message }),
             });
+
+            // Inside the sendMessage function, after parsing the response:
+            if (data.action && data.action.startsWith('pull:')) {
+                const modelName = data.action.split(':')[1];
+
+                // Create an installation button
+                const installButton = document.createElement('button');
+                installButton.className = 'install-model-btn';
+                installButton.setAttribute('data-model', modelName);
+                installButton.textContent = `Install ${modelName}`;
+
+                // Create a container for the button
+                const buttonContainer = document.createElement('div');
+                buttonContainer.className = 'model-install-container';
+                buttonContainer.appendChild(installButton);
+
+                // Add the button container to the chat
+                chatMessages.appendChild(buttonContainer);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
 
             if (!response.ok) {
                 removeTypingIndicator();
@@ -380,4 +402,93 @@ document.addEventListener('DOMContentLoaded', function() {
             codeBlockWrapper.appendChild(copyCodeButton);
         });
     });
+
+    // Function to pull/install an Ollama model
+    async function pullOllamaModel(modelName) {
+        try {
+            // Show a loading message
+            addMessage(`Installing model ${modelName}... This may take several minutes depending on the model size and your internet connection.`, false);
+            
+            const response = await fetch('/api/models/pull', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ model_name: modelName }),
+            });
+
+            const data = await response.json();
+            
+            if (!response.ok) {
+                addMessage(`Error installing model: ${data.message || 'Unknown error'}`, false);
+                return false;
+            }
+
+            // Add success message
+            addMessage(`✅ Model ${modelName} has been successfully installed! You can now use it for chat.`, false);
+            return true;
+        } catch (error) {
+            console.error('Error pulling model:', error);
+            addMessage(`Failed to install model ${modelName}: ${error.message}`, false);
+            return false;
+        }
+    }
+
+    // Function to handle model installation buttons
+    function setupModelInstallButtons() {
+        document.addEventListener('click', async function(event) {
+            // Check if the clicked element is a model installation button
+            if (event.target && event.target.classList.contains('install-model-btn')) {
+                const modelName = event.target.getAttribute('data-model');
+                if (modelName) {
+                    // Disable the button and show loading state
+                    event.target.disabled = true;
+                    event.target.textContent = 'Installing...';
+                    
+                    // Attempt to pull the model
+                    const success = await pullOllamaModel(modelName);
+                    
+                    if (success) {
+                        // Update the model dropdown to include the new model
+                        const modelSelect = document.getElementById('model-select');
+                        if (modelSelect) {
+                            // Check if the model is already in the dropdown
+                            let modelExists = false;
+                            for (let i = 0; i < modelSelect.options.length; i++) {
+                                if (modelSelect.options[i].value === modelName) {
+                                    modelExists = true;
+                                    break;
+                                }
+                            }
+                            
+                            // Add the model to the dropdown if it doesn't exist
+                            if (!modelExists) {
+                                const option = document.createElement('option');
+                                option.value = modelName;
+                                option.textContent = modelName;
+                                modelSelect.appendChild(option);
+                            }
+                            
+                            // Select the newly installed model
+                            modelSelect.value = modelName;
+                            
+                            // Trigger the change event to update the current model
+                            const event = new Event('change');
+                            modelSelect.dispatchEvent(event);
+                        }
+                        
+                        // Remove the installation button
+                        event.target.remove();
+                    } else {
+                        // Reset the button if installation failed
+                        event.target.disabled = false;
+                        event.target.textContent = 'Install Model';
+                    }
+                }
+            }
+        });
+    }
+
+    // Setup model install buttons
+    setupModelInstallButtons();
 });

@@ -169,6 +169,17 @@ body {
 
         // Initialize the current model
         window.currentModel = document.getElementById('model-select').value;
+
+        // Add event listener for pulling a model
+        document.getElementById('pull-model-button').addEventListener('click', function() {
+            // Simulate pulling a new model by updating the model dropdown
+            const currentModel = document.getElementById('model-select').value;
+            const newModel = currentModel === 'llama3.3'? 'llama4' : 'llama3.3';
+            document.getElementById('model-select').value = newModel;
+            console.log('Model pulled:', newModel);
+            // You can use the new model for subsequent messages
+            window.currentModel = newModel;
+        })
     </script>
 </body>
 </html>
